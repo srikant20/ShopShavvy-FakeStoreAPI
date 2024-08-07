@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ShopSavvy - Fake Store API</title>
+    <link
+      rel="stylesheet"
+      href="../node_modules/bootstrap/dist/css/bootstrap.css"
+    />
+    <link
+      rel="stylesheet"
+      href="../node_modules/bootstrap-icons/font/bootstrap-icons.css"
+    />
+    <link rel="icon" href="assets/icons/favicon.ico" type="image/x-icon" />
+    <style>
+      .card {
+        border: 1px solid #dee2e6; /* Card border color */
+        border-radius: 0.375rem; /* Rounded corners */
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Box shadow */
+      }
+
+      .card-body {
+        padding: 1rem;
+      }
+
+      .product-title {
+        font-size: 1rem; /* Larger font size for title */
+        color: #343a40; /* Dark text color */
+        margin-bottom: 0.5rem;
+        cursor: pointer; /* Pointer cursor for clickable title */
+      }
+
+      .product-price {
+        font-size: 1.5rem; /* Larger font size for price */
+        color: #dc3545; /* Red color for price */
+        font-weight: bold; /* Bold font weight */
+        margin-bottom: 0.5rem;
+      }
+
+      .product-rating {
+        font-size: 1.2rem; /* Slightly larger font size for rating */
+        color: #ffc107; /* Yellow color for rating stars */
+        margin-bottom: 0.5rem;
+      }
+
+      .product-reviews {
+        font-size: 1rem; /* Default font size for reviews */
+        color: #6c757d; /* Light grey color for reviews */
+        margin-bottom: 1rem;
+      }
+
+      .card-footer {
+        background-color: #f8f9fa; /* Light background color */
+        border-top: 1px solid #dee2e6; /* Border at the top */
+        padding: 0.5rem;
+      }
+
+      .btn-danger:hover {
+        background-color: #c82333; /* Darker red on hover */
+        border-color: #bd2130; /* Darker red border on hover */
+      }
+      .product-details-image {
+        width: 100%;
+        height: auto;
+        max-height: 275px;
+        object-fit: contain; /* Ensure the image fits within the specified dimensions */
+      }
+      .search-input {
+        width: 200px;
+        transition: width 0.4s ease-in-out, border-color 0.4s;
+        border: 1px solid #ced4da;
+      }
+
+      .search-input:focus {
+        width: 300px;
+        border-color: #dc3545;
+        box-shadow: 0 0 5px rgba(220, 53, 69, 0.5);
+      }
+
+      .quantity-input {
+        width: 50px;
+        text-align: center;
+      }
+
+      .quantity-btn {
+        width: 30px;
+        height: 30px;
+      }
+      .toast-container {
+        position: fixed;
+        bottom: 1rem;
+        right: 1rem;
+        padding: 1rem;
+        z-index: 1050;
+      }
+      .product-details-image {
+        border-radius: 5px;
+        border: 1px solid #ddd;
+      }
+
+      .modal-body p {
+        margin-bottom: 0.5rem;
+      }
+
+      .modal-footer {
+        justify-content: end;
+      }
+
+      footer {
+        background-color: #343a40;
+        color: #fff;
+        padding: 2rem 0;
+        border-top: 1px solid #454d55;
+      }
+
+      footer .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      footer h5 {
+        margin-bottom: 1rem;
+        font-size: 1.5rem;
+        color: #e9ecef;
+        font-weight: 600;
+      }
+
+      footer p {
+        margin-bottom: 1rem;
+        color: #ced4da;
+      }
+
+      footer .list-unstyled li {
+        margin-bottom: 0.5rem;
+      }
+
+      footer .list-unstyled a {
+        color: #e9ecef;
+        text-decoration: none;
+        transition: color 0.3s;
+      }
+
+      footer .list-unstyled a:hover {
+        color: #dc3545;
+        text-decoration: underline;
+      }
+
+      footer .social-icons a {
+        color: #e9ecef;
+        margin: 0 0.5rem;
+        font-size: 1.5rem;
+        transition: color 0.3s;
+      }
+
+      footer .social-icons a:hover {
+        color: #dc3545;
+      }
+
+      body {
+        font-family: Arial, sans-serif;
+        color: #333;
+        line-height: 1.6;
+      }
+
+      .container {
+        max-width: 1200px;
+      }
+
+      h5 {
+        color: #dc3545;
+      }
+    </style>
+
+    <script>
+      let allProducts = [];
+
+      function getCategories() {
+        fetch("https://fakestoreapi.com/products/categories")
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (data) {
+            data.unshift("all");
+            for (var item of data) {
+              var option = document.createElement("option");
+              option.text = item.toUpperCase();
+              option.value = item;
+              document.getElementById("lstCategories").appendChild(option);
+            }
+          });
+      }
+
+      function getProducts(url) {
+        document.getElementById("productsContainer").innerHTML = "";
+        fetch(url)
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (data) {
+            allProducts = data;
+            displayProducts(data);
+          });
+      }
+
+      function displayProducts(products) {
+        document.getElementById("productsContainer").innerHTML = "";
+        for (var item of products) {
+          var div = document.createElement("div");
+          div.className = "card m-2 p-2";
+          div.style.width = "275px";
+          // Create a string of stars based on rating
+          const ratingStars =
+            "★".repeat(Math.floor(item.rating.rate)) +
+            "☆".repeat(5 - Math.floor(item.rating.rate));
+          const truncatedTitle =
+            item.title.length > 70
+              ? item.title.substring(0, 70) + "..."
+              : item.title;
+          div.innerHTML = `
+            <img src= ${
+              item.image
+            } class= "card-img-top" style= "height: 250px" onclick="showProductDetails(${
+            item.id
+          })">
+            <div class="card-header  product-title" style= "height: 100px;>
+              <p onclick="showProductDetails(${item.id})">${truncatedTitle}</p>
+            </div>
+            <div class="card-body">
+              <p class="product-price">Price: $${item.price.toFixed(2)}</p>
+              <p class="product-rating">${ratingStars}</p>
+              <p class="color-secondary">(${item.rating.count} reviews)</p>
+            </div>
+            <div class="card-footer">
+              <button id="cartButton-${
+                item.id
+              }" class="btn btn-danger w-100" onclick="addToCartClick(${
+            item.id
+          })">
+                <span class="bi bi-cart4"> </span>Add to Cart
+              </button>
+            </div>
+          `;
+          document.getElementById("productsContainer").appendChild(div);
+        }
+      }
+
+      function bodyload() {
+        getCategories();
+        getProducts("https://fakestoreapi.com/products");
+        getCartItemsCount();
+      }
+
+      function categoryChange() {
+        var categoryName = document.getElementById("lstCategories").value;
+        if (categoryName == "all") {
+          getProducts("https://fakestoreapi.com/products");
+        } else {
+          getProducts(
+            `https://fakestoreapi.com/products/category/${categoryName}`
+          );
+        }
+      }
+
+      var cartItems = [];
+      var count = 0;
+
+      function getCartItemsCount() {
+        count = cartItems.length;
+        document.getElementById("countCart").innerHTML = count;
+      }
+
+      function addToCartClick(id) {
+        fetch(`https://fakestoreapi.com/products/${id}`)
+          .then((response) => response.json())
+          .then((data) => {
+            let cartItem = cartItems.find((item) => item.id === data.id);
+            if (cartItem) {
+              cartItem.quantity += 1;
+            } else {
+              data.quantity = 1;
+              cartItems.push(data);
+            }
+            addToCartAlert(true);
+            updateCartButton(id, true);
+            getCartItemsCount();
+          });
+      }
+
+      function addToCartAlert(status) {
+        const message = `Product ${status ? "added to" : "removed from"} cart!`;
+        document.querySelector(".toast-container").innerHTML = `<div
+        id="cartToast"
+        class="toast"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="toast-header">
+          <strong class="me-auto"><span style='color:red;font-size: 1.5rem'>S</span>hopSavvy</strong>
+          <small>Just now</small>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="toast-body">${message}</div>
+      </div>
+    </div>`;
+        const toast = new bootstrap.Toast(document.getElementById("cartToast"));
+        toast.show();
+      }
+
+      function updateCartButton(id, inCart) {
+        var button = document.getElementById(`cartButton-${id}`);
+        if (inCart) {
+          button.innerHTML = '<span class="bi bi-cart4"></span> Go to Cart';
+          button.className = "btn btn-secondary w-100";
+          button.onclick = function () {
+            showCartClick();
+            var cartModal = new bootstrap.Modal(
+              document.getElementById("cart")
+            );
+            cartModal.show();
+          };
+        } else {
+          button.innerHTML = '<span class="bi bi-cart4"></span> Add to Cart';
+          button.className = "btn btn-danger w-100";
+          button.onclick = function () {
+            addToCartClick(id);
+          };
+        }
+      }
+
+      function updateCartTotal() {
+        let totalValue = 0;
+        for (const item of cartItems) {
+          totalValue += item.price * item.quantity;
+        }
+        document.getElementById(
+          "cartTotal"
+        ).innerHTML = `Total: $${totalValue.toFixed(2)}`;
+      }
+
+      function showCartClick() {
+        var totalValue = 0;
+        document.querySelector("tbody").innerHTML = "";
+        for (var item of cartItems) {
+          var tr = document.createElement("tr");
+          var tdTitle = document.createElement("td");
+          var tdPrice = document.createElement("td");
+          var tdQuantity = document.createElement("td");
+          var tdPreview = document.createElement("td");
+
+          tdTitle.innerHTML = item.title;
+          tdPrice.innerHTML = `$${(item.price * item.quantity).toFixed(2)}`;
+
+          tdQuantity.innerHTML = `
+            <div class="input-group">
+                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(${item.id}, -1)">-</button>
+                <input type="text" class="form-control text-center" value="${item.quantity}" disabled>
+                <button class="btn btn-outline-secondary" type="button" onclick="updateQuantity(${item.id}, 1)">+</button>
+            </div>
+        `;
+
+          var img = document.createElement("img");
+          img.src = item.image;
+          img.width = "100";
+          img.height = "100";
+
+          tdPreview.appendChild(img);
+
+          tr.appendChild(tdTitle);
+          tr.appendChild(tdPrice);
+          tr.appendChild(tdQuantity);
+          tr.appendChild(tdPreview);
+
+          document.querySelector("tbody").appendChild(tr);
+          totalValue += item.price * item.quantity;
+        }
+        document.getElementById(
+          "cartTotal"
+        ).innerHTML = `Total: $${totalValue.toFixed(2)}`;
+
+        // Update the button status for each product in the cart
+        for (var item of cartItems) {
+          updateCartButton(item.id, item.quantity > 0);
+        }
+      }
+
+      function updateQuantity(id, change) {
+        let cartItem = cartItems.find((item) => item.id === id);
+        if (cartItem) {
+          cartItem.quantity += change;
+
+          if (cartItem.quantity < 0) {
+            cartItem.quantity = 0; // Ensure quantity does not go below zero
+          }
+
+          if (cartItem.quantity === 0) {
+            addToCartAlert();
+            cartItems = cartItems.filter((item) => item.id !== id); // Remove item if quantity is zero
+          }
+
+          // Update the cart view and button state
+          showCartClick();
+          getCartItemsCount();
+          updateCartButton(
+            id,
+            cartItems.some((item) => item.id === id)
+          );
+        }
+      }
+
+      function showProductDetails(id) {
+        fetch(`https://fakestoreapi.com/products/${id}`)
+          .then(function (response) {
+            return response.json();
+          })
+          .then(function (data) {
+            // Format rating stars
+            const ratingStars = Array.from({ length: 5 }, (_, index) => {
+              return index < Math.floor(data.rating.rate) ? "★" : "☆";
+            }).join(" ");
+            const capitalizedCategory =
+              data.category.charAt(0).toUpperCase() + data.category.slice(1);
+            // Set product details in modal
+            document.getElementById("productDetailsModalTitle").innerHTML =
+              "<span style='font-weight: bold;'>Product Details</span>";
+            document.getElementById("productDetailsModalBody").innerHTML = `
+          <div class="d-flex align-items-center mb-3">
+            <img src="${
+              data.image
+            }" class="img-fluid product-details-image" alt="${
+              data.title
+            }" style="max-width: 300px; margin-right: 20px;">
+            <div>
+              <p><strong>${data.title}</strong></p>
+              <p>${data.description}</p>
+              <p><strong>Category:</strong> ${capitalizedCategory}</p>
+              <p><strong>Price:</strong> $${data.price}</p>
+              <p><strong>Rating:</strong> ${ratingStars} (${
+              data.rating.count
+            } reviews)</p>
+              <p><strong>Manufacturer:</strong> ${data.brand || "N/A"}</p>
+            </div>
+          </div>
+        `;
+
+            // Initialize and show the modal
+            var productDetailsModal = new bootstrap.Modal(
+              document.getElementById("productDetailsModal")
+            );
+            productDetailsModal.show();
+          });
+      }
+
+      function searchProducts() {
+        const query = document
+          .getElementById("searchInput")
+          .value.toLowerCase();
+        const filteredProducts = allProducts.filter((product) =>
+          product.title.toLowerCase().includes(query)
+        );
+        if (filteredProducts.length === 0) {
+          alert("Item not Found!!");
+          document.getElementById("lstCategories").value = "all";
+          getProducts("https://fakestoreapi.com/products");
+        } else {
+          displayProducts(filteredProducts);
+        }
+      }
+    </script>
+  </head>
+  <body class="container-fluid" onload="bodyload()">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+      <a class="navbar-brand" href="#">
+        <img
+          src="assets/icons/favicon.ico"
+          width="30"
+          height="30"
+          class="d-inline-block align-top"
+          alt=""
+        />hopSavvy
+      </a>
+      <button
+        class="navbar-toggler"
+        type="button"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarNav"
+        aria-controls="navbarNav"
+        aria-expanded="false"
+        aria-label="Toggle navigation"
+      >
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="#">Home</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">About</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="#">Contact Us</a>
+          </li>
+        </ul>
+
+        <form
+          class="d-flex"
+          onsubmit="event.preventDefault(); searchProducts();"
+        >
+          <input
+            id="searchInput"
+            class="form-control me-2 search-input"
+            type="search"
+            placeholder="Search for products...."
+            aria-label="Search"
+          />
+          <button class="btn btn-danger bi bi-search" type="submit"></button>
+        </form>
+        <button
+          onclick="showCartClick()"
+          class="btn btn-danger ms-3"
+          data-bs-target="#cart"
+          data-bs-toggle="modal"
+        >
+          [<span id="countCart"></span>] <span class="bi bi-cart3"></span>
+          Cart
+        </button>
+      </div>
+    </nav>
+
+    <div class="row mt-3">
+      <div class="col-2">
+        <select
+          class="form-select"
+          id="lstCategories"
+          onchange="categoryChange();"
+        ></select>
+      </div>
+      <div class="col-10">
+        <div
+          class="d-flex flex-wrap overflow-auto"
+          id="productsContainer"
+          style="height: 100%"
+        ></div>
+      </div>
+    </div>
+
+    <!-- Product Details Modal -->
+    <div
+      class="modal fade"
+      id="productDetailsModal"
+      tabindex="-1"
+      aria-labelledby="productDetailsModalTitle"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="productDetailsModalTitle">
+              Product Details
+            </h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+              aria-label="Close"
+            ></button>
+          </div>
+          <div class="modal-body" id="productDetailsModalBody">
+            <!-- Product details will be injected here -->
+          </div>
+          <!-- Optional footer -->
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-bs-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="cart">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Your Cart Items</h3>
+            <button class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Price</th>
+                  <th>Quantity</th>
+                  <th>Preview</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <div id="cartTotal"></div>
+            <button data-bs-dismiss="modal" class="btn btn-danger">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast-container"></div>
+
+    <footer>
+      <div class="container text-center">
+        <div class="row">
+          <div class="col-md-4">
+            <h5>
+              About <span style="color: red; font-size: 2rem">S</span>hopSavvy
+            </h5>
+            <p>
+              ShopSavvy is your one-stop shop for the best products and deals.
+              We offer a wide range of items from various categories, ensuring
+              that you find what you're looking for at the best prices.
+            </p>
+          </div>
+          <div class="col-md-4">
+            <h5>Contact Us</h5>
+            <ul class="list-unstyled">
+              <li>
+                <i class="bi bi-house-door"></i> 1234 Shop Street, Commerce City
+              </li>
+              <li><i class="bi bi-envelope"></i> info@shopsavvy.com</li>
+              <li><i class="bi bi-phone"></i> +91 012 345 6789</li>
+            </ul>
+          </div>
+          <div class="col-md-4">
+            <h5>Follow Us</h5>
+            <div class="social-icons">
+              <a href="#" class="bi bi-facebook"></a>
+              <a href="#" class="bi bi-twitter"></a>
+              <a href="#" class="bi bi-instagram"></a>
+              <a href="#" class="bi bi-linkedin"></a>
+            </div>
+          </div>
+        </div>
+        <p class="mt-3 mb-0">&copy; 2024 ShopSavvy. All rights reserved.</p>
+      </div>
+    </footer>
+    <script src="../node_modules/jquery/dist/jquery.js"></script>
+    <script src="../node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
+  </body>
+</html>
